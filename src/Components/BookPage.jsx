@@ -1,91 +1,86 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Row, Col, Button, Form } from "react-bootstrap";
+import { Row, Col, Button, Form, Card } from "react-bootstrap";
 import axios from "axios";
+import { Book } from "./Book";
 
 const BookPage = () => {
+  const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [books, setBooks] = useState([]);
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [is_end, setIs_end] = useState(false);
-  const [query, setQuery] = useState("리액트");
-  const ref_query = useRef(null);
+  const [isend, setIsend] = useState(false);
+  const [query, setQuery] = useState("리엑트");
+  const [onsummit, setOnsummit] = useState(false);
 
-  const onSummit = (e) => {
-    e.preventDefault();
-    getBooks();
-  };
-
-  const getBooks = async () => {
+  const getData = async () => {
     const url = "https://dapi.kakao.com/v3/search/book?target=title";
     const config = {
       headers: { Authorization: "KakaoAK 62d1651fe45fa7781380543145cdd1c6" },
       params: { query: query, size: 6, page: page },
     };
-
     setLoading(true);
-    const result = await axios(url, config);
-
-    setTotal(result.data.meta.pageable_count);
-    setIs_end(result.data.meta.is_end);
-    setBooks(result.data.documents);
+    const result = await axios.get(url, config);
     console.log(result);
+    setList(result.data.documents);
+    setIsend(result.data.meta.is_end);
     setLoading(false);
-    ref_query.current.focus();
+  };
+
+  const onSummit = (e) => {
+    e.preventDefault();
+    setPage(1);
+    getData();
   };
 
   useEffect(() => {
-    getBooks();
+    getData();
   }, [page]);
 
-  if (loading) return <h1 className="text-center my-5">로딩중임 ...</h1>;
+  if (loading) return <h1 className="text-center">로딩중임</h1>;
   return (
-    <Row className="my-5 mx-2">
+    <Row>
+      <h1 className="text-center my-5">도서검색</h1>
       <Row>
-        <Col>
+        <Col md={5}>
           <Form onSubmit={onSummit}>
             <Form.Control
               onChange={(e) => setQuery(e.target.value)}
-              value={query}
               placeholder="검색어"
-              ref={ref_query}
             />
+            <Button className="btn-sm">검색</Button>
           </Form>
         </Col>
-        <Col>검색수 : {total}</Col>
       </Row>
-      <Col>
-        <h1 className="text-center">도서검색</h1>
-        <Row>
-          {books.map((book) => (
-            <Col key={book.isbn} className="box my-2">
-              <div>
-                <img
-                  src={
-                    !book.thumbnail
-                      ? "http://via.placeholder.com/120x170"
-                      : book.thumbnail
-                  }
-                />
-              </div>
-              <div className="eilipsis">{book.title}</div>
-              <div className="eilipsis">{book.price}원</div>
-            </Col>
-          ))}
-        </Row>
-      </Col>
-      <div>
-        <Button disabled={page == 1 && true} onClick={() => setPage(page - 1)}>
-          이전
-        </Button>
-        <span className="mx-3">{page}</span>
-        <Button
-          disabled={is_end == 1 && true}
-          onClick={() => setPage(page + 1)}
-        >
-          다음
-        </Button>
-      </div>
+      <Row>
+        {list.map((book) => (
+          <Col className="my-2" key={book.isbn} md={3} xs={6}>
+            <Card>
+              <Card.Body>
+                <img src={book.thumbnail} />
+                <div className="ellipsis">{book.title}</div>
+                <div>{book.price}원</div>
+                <Book book={book} />
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
+        <div className="text-center my-3">
+          <Button
+            disabled={isend && false}
+            onClick={() => setPage(page - 1)}
+            className="btnsm"
+          >
+            이전
+          </Button>
+          <span className="px-3">{page}</span>
+          <Button
+            disabled={isend && true}
+            onClick={() => setPage(page + 1)}
+            className="btnsm"
+          >
+            다음
+          </Button>
+        </div>
+      </Row>
     </Row>
   );
 };
